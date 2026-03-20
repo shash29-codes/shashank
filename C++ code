@@ -1,0 +1,75 @@
+//ATM monitoring// 
+#include <LiquidCrystal.h> 
+// Define LCD pins (RS, EN, D4, D5, D6, D7) 
+LiquidCrystal lcd(2, 3, 4, 5, 6, 7); 
+// Define sensor and buzzer pins 
+const int vibrationSensorPin = 8; 
+const int fireSensorPin = 9; 
+const int buzzerPin = 10; 
+// Variables to store sensor states 
+int vibrationState = 0; 
+int fireState = 0; 
+// Define phone number for SMS alerts 
+const char phoneNumber[] = "+9195xxxxxx19"; 
+void setup() { 
+// Initialize the LCD 
+lcd.begin(16, 2); 
+lcd.print("ATM Monitoring"); 
+lcd.setCursor(0, 1); 
+lcd.print("System Active"); 
+// Setup pin modes 
+pinMode(vibrationSensorPin, INPUT); 
+pinMode(fireSensorPin, INPUT); 
+pinMode(buzzerPin, OUTPUT); 
+// Start serial communication for GSM module 
+Serial.begin(9600); 
+// Give a short delay for system setup 
+delay(2000); 
+lcd.clear(); 
+} 
+void loop() { 
+// Read sensor states 
+vibrationState = digitalRead(vibrationSensorPin);
+fireState = digitalRead(fireSensorPin); 
+// Check vibration sensor 
+if (vibrationState == HIGH) { 
+lcd.setCursor(0, 0); 
+lcd.print("Vibration Alert! "); 
+digitalWrite(buzzerPin, HIGH); // Activate buzzer 
+sendSMS("Vibration detected in ATM. Please alert!"); // Send SMS 
+lcd.setCursor(0, 1); 
+lcd.print("SMS Sent"); 
+delay(3000); // Keep alert for 3 seconds 
+lcd.clear(); 
+} else if (fireState == LOW) { 
+lcd.setCursor(0, 0); 
+lcd.print("Fire Alert!"); 
+digitalWrite(buzzerPin, HIGH); // Activate buzzer 
+sendSMS("Fire detected in ATM. Please alert!"); // Send SMS 
+lcd.setCursor(0, 1); 
+lcd.print("SMS Sent"); 
+delay(3000); // Keep alert for 3 seconds 
+lcd.clear(); 
+} else { 
+lcd.setCursor(0, 0); 
+lcd.print("System Monitoring"); 
+digitalWrite(buzzerPin, LOW); // Turn off buzzer 
+} 
+// Add a delay for stable readings 
+delay(200); 
+} 
+void sendSMS(const char *message) { 
+// Function to send SMS via GSM module 
+Serial.print("\r"); 
+delay(1000); 
+Serial.print("AT+CMGF=1\r"); // Set GSM to text mode 
+delay(1000); 
+Serial.print("AT+CMGS=\""); 
+Serial.print(phoneNumber); // Send SMS to this number 
+Serial.println("\"\r"); 
+delay(1000); 
+Serial.print(message); // Send the message 
+delay(1000); 
+Serial.write(0x1A); // End the message with Ctrl+Z 
+delay(5000); // Wait for SMS to be sent 
+}
